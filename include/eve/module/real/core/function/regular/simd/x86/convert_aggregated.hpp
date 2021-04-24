@@ -24,8 +24,19 @@ namespace eve::detail
   EVE_FORCEINLINE wide<Out,N>
   convert_(EVE_SUPPORTS(sse2_), wide<In, N, aggregated_> const &v0, as_<Out> const &tgt) noexcept
   {
-    // shortx16 -> charx16 is the only case we care about
-    if constexpr( std::is_integral_v<In> && (sizeof(In) == 2) )
+    if constexpr( std::same_as<In,double> )
+    {
+      auto[l,h] = v0.slice();
+      auto lc = convert(l, tgt);
+      auto hc = convert(h, tgt);
+
+      auto cc = bit_cast( wide<std::uint32_t,N>(_mm_bslli_si128( bit_cast(hc, as_<wide<std::uint32_t,N>>()) ,8))
+                        , as_<wide<Out,N>>()
+                        );
+
+      return cc | lc;
+    }
+    else if constexpr( std::is_integral_v<In> && (sizeof(In) == 2) )
     {
       // We slice the shortx16 int shortsx8
       auto[l,h] = v0.slice();
