@@ -18,6 +18,8 @@ namespace eve
   // Function decorator - promote mode
   struct promote_
   {
+    template<typename D> static constexpr auto combine( D const& ) noexcept =delete;
+
     template<typename Function>
     constexpr EVE_FORCEINLINE auto operator()(Function f) const noexcept
     {
