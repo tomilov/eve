@@ -1,0 +1,22 @@
+ <meta charset="utf-8">
+**Possible output:**
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ bash
+---- simd
+<- i8                                     = (1, 120, 54, 68)
+<- i16                                    = (1, 120, 54, 32760)
+-> promote(add)(i32, i8, i8)              = (3, 360, 162, 32896)
+-> promote(add)(0, i6, i6, i6)            = (3, 360, 162, 98280) 0 is an int32_t
+-> promote(add)(i16, i8, i8)              = (3, 360, 162, -32640)
+-> promote(add)(i8, i8, i8)               = (3, 104, -94, -52)
+-> add(i8, i8, i8)                        = (3, 104, -94, -52)
+-> promote(add)(i16, si8, si8)            = (241, 360, 294, -32536)
+-> promote(add)(i16, si8,  i8)            = (122, 360, 228, -32588)
+-> add(i8, i8, si8)                       = (122, 104, -28, 0)
+-> promote(saturated(add))(i16, i8, i8)   = (3, 360, 162, 32767)
+-> promote(saturated((add))(i8, i8, i8)   = (3, 127, 127, 127)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+<!-- Markdeep: -->
+<script src="../../markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?"></script>
