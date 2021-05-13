@@ -5,7 +5,7 @@
  -->
 <meta charset="utf-8" lang="en">
                        **Expressive Vector Engine**
-                           `eve::narrow`
+                           `eve::pedantic`
 <br>
 
   (insert ../../../crumbs.html here)
@@ -22,34 +22,39 @@ namespace eve
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
-Function object representing **TODO: FILL THIS BLANK**.
+Function object representing the narrow decorator.
 
 Member functions
 ====================================================================================================
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ c++
-template<**TODO: FILL THIS BLANK**>
-auto operator()( **TODO: FILL THIS BLANK**) const noexcept;
+template<callable C>
+auto operator()( C callable) const noexcept;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
-**TODO: FILL THIS BLANK**
+Performs the operation defined by the callable [element-wise](../../../glossary.html#element-wise_)
+on narrowed arguments.
+
 
 Parameters
 ----------------------------------------------------------------------------------------------------
 `x`
-:   **TODO: FILL THIS BLANK**
-
-OTHER PARAMETERS
-:   **TODO: FILL THIS BLANK IF NEEDED BUT RESPECT THE : FORMATTING**
+:   an arithmetic callable
 
 Return value
 ----------------------------------------------------------------------------------------------------
 <span class="smallskip"></span>
-For **TODO: FILL THIS BLANK**:
+The callable is supposed to be an arithmetic call.
+narrow makes the callable automatically try to convert with saturation all its remaining parameters
+ to a type whose elements are convertible to the first type element before call, but insist on this
+being a narrowing operation.
+It does not compile if the first type has an element type strictly promoting the common compatible
+type of the other parameters. If sucessfull, it returns a value of the narrowed common type.
+
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ c++
-auto r = narrow(**TODO: FILL THIS BLANK**);
+auto r = narrow(c)(x0, x1, ..., xn);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -57,27 +62,24 @@ is semantically equivalent to:
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ c++
-Target r;
+using r_t = common_compatible_t<X1,...>
+using elt_t = element_type_t<T0>;
 
-if constexpr( scalar_value<T> )
+if constexpr(sizeof(element_type_t<r_t>) <= sizeof(element_type_t<X0>) )
 {
-  **TODO: FILL THIS BLANK**
+  return f(arg0, (saturated(convert))(args, as_<elt_t>())...);
 }
-else if constexpr( simd_value<T> )
-{
-  **TODO: FILL THIS BLANK**
-}
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
-  <!--(insert ../../src/narrow.src.html here)-->
+  (insert ../../src/narrow.src.html here)
 
-  <!--(insert ../../out/narrow.out.html here)-->
+  (insert ../../out/narrow.out.html here)
 
 See Also
 ====================================================================================================
-
-**TODO: FILL THIS BLANK OR REMOVE THE SECTION ALTOGETHER**
+[eve::promote](./promote.html)
 
 <!-- End of Document -->
 <link rel="stylesheet" href="../../../eve.css">

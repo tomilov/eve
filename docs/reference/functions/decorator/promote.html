@@ -45,10 +45,11 @@ Return value
 ----------------------------------------------------------------------------------------------------
 <span class="smallskip"></span>
 The callable is supposed to be an arithmetic call.
-promote makes the callable automatically try to upgrade all its remaining parameters to a type convertible
-to the first one before call, but insist on this being an upgrade operation. It does not compile if
-the first type has an element type narrowing the common compatible type of the other
-parameters. If sucessfull, it returns a value of the promoted  type.
+promote makes the callable automatically try to promote all its remaining parameters to a type
+whose elements are convertible to the first type element before call, but insist on this being
+an upgrade operation. It does not compile ifthe first type has an element type strictly narrowing
+the common compatible type of the other parameters. If sucessfull, it returns a value of the promoted
+type.
 
 
 <script type="preformatted">

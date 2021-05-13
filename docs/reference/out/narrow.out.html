@@ -1,0 +1,20 @@
+ <meta charset="utf-8">
+**Possible output:**
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ bash
+---- simd
+<- i8                                     = (1, 120, 54, 68)
+<- i16                                    = (1, 120, 54, 32760)
+-> narrow(add)(i8, i16, i16)              = (3, 104, -94, 66)
+-> narrow(add)(i8, i8, i8)                = (3, 104, -94, -52)
+-> add(i8, i8, i8)                        = (3, 104, -94, -52)
+-> narrow(add)(i8, si16, si16)            = (-1, 118, 52, 66)
+-> narrow(add)(i8, si16,  i16)            = (-127, 111, -21, 66)
+-> add(i8, i16, si16)                     = (122, 104, -28, 0)
+-> narrow(saturated(add))(i8, i16, i16)   = (3, 127, 127, 127)
+-> narrow(saturated(add)(i8, i8, i8)      = (3, 127, 127, 127)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+<!-- Markdeep: -->
+<script src="../../markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?"></script>
