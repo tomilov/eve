@@ -7,6 +7,8 @@
 //==================================================================================================
 #pragma once
 
+#include <bit>
+#include <compare>
 #include <cstddef>
 #include <type_traits>
 
@@ -20,37 +22,28 @@ namespace eve
   //================================================================================================
   //! @brief SIMD register cardinal type
   //!
-  //! eve::fixed wraps an integral power of two constant that represents the number of lanes in a
-  //! given eve::simd_value type.
-  //
-  //!  @tparam Cardinal Number of lane. If `Cardinal` is not a power of two, code is invalid.
-  //!
-  //!  @groupheader{Member type}
-  //!
-  //!   | Member          | Definition                                                    |
-  //!   |:----------------|:--------------------------------------------------------------|
-  //!   | `type`          | `eve::fixed``<Cardinal>`                                      |
-  //!   | `split_type`    | `eve::fixed``<Cardinal / 2>`. Only defined if `Cardinal` > 1  |
-  //!   | `combined_type` | `eve::fixed``<Cardinal * 2>`                                  |
+  //! eve::fixed_lane wraps an integral power of two constant that represents the number of lanes
+  //! in a given eve::simd_value type.
   //!
   //================================================================================================
-  template<std::ptrdiff_t Cardinal>
-  struct fixed : std::integral_constant<std::ptrdiff_t, Cardinal>
+  struct fixed_lane
   {
-    static constexpr bool is_pow2(std::ptrdiff_t v) { return !v || ( !(v & (v - 1)) ); }
-    static_assert(is_pow2(Cardinal), "Cardinal must be a power of 2");
+    consteval fixed_lane(std::ptrdiff_t v) : value(v)
+    {
+      if( !std::has_single_bit( static_cast<std::size_t>(v)) )
+        throw "[eve] Lane must be a power of 2";
+    }
 
-    using type          = fixed<Cardinal>;
-    using split_type    = fixed<Cardinal / 2>;
-    using combined_type = fixed<Cardinal * 2>;
+    consteval auto operator<=>(const fixed_lane&) const noexcept = default;
+
+    friend consteval fixed_lane operator*(fixed_lane l, int n) noexcept { return {l.value * n}; }
+    friend consteval fixed_lane operator*(int n, fixed_lane l) noexcept { return {l.value * n}; }
+    friend consteval fixed_lane operator/(fixed_lane l, int n) noexcept { return {l.value / n}; }
+
+    std::ptrdiff_t const value;
   };
 
-  template<> struct fixed<1ULL> : std::integral_constant<std::ptrdiff_t, 1ULL>
-  {
-    using type          = fixed<1ULL>;
-    using combined_type = fixed<2>;
-  };
-
+  template<std::ptrdiff_t N> inline constexpr fixed_lane lane{N};
 
   //================================================================================================
   //! @brief Cardinal type for scalar values
@@ -65,9 +58,6 @@ namespace eve
   //! @brief Cardinal object representing the cardinal of [scalar values](@ref eve::scalar_value)
   //================================================================================================
   inline constexpr scalar_cardinal const scalar = {};
-
-  template<std::ptrdiff_t Cardinal>
-  inline constexpr fixed<Cardinal> const lane = {};
 
   //================================================================================================
   //! @}
