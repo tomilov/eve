@@ -8,9 +8,12 @@
 #pragma once
 
 #include <eve/as.hpp>
+#include <eve/pattern.hpp>
 #include <eve/concept/value.hpp>
 #include <eve/detail/implementation.hpp>
+#include <eve/detail/function/swizzle.hpp>
 #include <eve/function/is_less.hpp>
+#include <eve/function/bit_cast.hpp>
 
 #include <type_traits>
 
@@ -225,36 +228,25 @@ namespace eve::detail
     //==============================================================================================
     // Convert to 8 bits integer
     //==============================================================================================
-    else if constexpr( std::is_integral_v<Out> && (sizeof(Out) == 1) )
+    else if constexpr( (sizeof(Out) == 1) )
     {
-      //============================================================================================
-      // 16 -> 8 bits
-      //============================================================================================
-      if constexpr( sizeof(In) == 2 && (N::value <= 8) )
+      if constexpr( current_api < avx )
       {
-              if constexpr(N::value == 1) return wide<Out,N>(v0.storage());
-        else  if constexpr(N::value <= 4)
+        if constexpr( std::is_integral_v<In> )
         {
-          v0 &= static_cast<In>(0x00FFU);
-          return _mm_packus_epi16(v0,v0);
+          // We only take one byte every sizeof(In)
+          constexpr auto shf = fix_pattern<N::value>( as_pattern{ [](auto i, auto)
+                                                                  {
+                                                                    return i*sizeof(In);
+                                                                } }
+                                                    );
+          auto bytes = basic_swizzle(eve::bit_cast(v0,eve::as<wide<Out>>()), shf);
+          return wide<Out,N>(bytes.storage());
         }
         else
         {
-          auto[l,h] = v0.slice();
-          l &= static_cast<In>(0x00FFU);
-          h &= static_cast<In>(0x00FFU);
-
-          return _mm_packus_epi16(l,h);
+          return convert_(EVE_RETARGET(simd_), v0, tgt);
         }
-      }
-      //============================================================================================
-      // 32 -> 8 bits
-      //============================================================================================
-      else if constexpr( std::is_integral_v<In> && sizeof(In) == 4 && (N::value <= 4) )
-      {
-              if constexpr(N::value == 1) return wide<Out,N>(v0.storage());
-        else  if constexpr(N::value == 2) return wide<Out,N>(v0.get(0),v0.get(1));
-        else  return convert(convert(v0, as_<downgrade_t<In>>()), as_<Out>());
       }
       else
       {
