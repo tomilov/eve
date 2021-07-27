@@ -20,9 +20,11 @@ namespace eve::detail
   // Converting from aggregation of x86_128 to x86_128
   //================================================================================================
   template<real_scalar_value In, typename N, real_scalar_value Out>
-  requires( std::same_as<typename wide<Out,N>::abi_type, x86_128_>)
   EVE_FORCEINLINE wide<Out,N>
-  convert_(EVE_SUPPORTS(sse2_), wide<In, N, aggregated_> const &v0, as_<Out> const &tgt) noexcept
+  convert_(EVE_SUPPORTS(sse2_), wide<In, N> const &v0, as<Out> const &tgt) noexcept
+  requires(   std::same_as<typename wide<Out,N>::abi_type, x86_128_>
+          &&  std::same_as<abi_t<In, N>, aggregated_>
+          )
   {
     if constexpr( std::same_as<In,double> )
     {
@@ -30,8 +32,8 @@ namespace eve::detail
       auto lc = convert(l, tgt);
       auto hc = convert(h, tgt);
 
-      auto cc = bit_cast( wide<std::uint32_t,N>(_mm_bslli_si128( bit_cast(hc, as_<wide<std::uint32_t,N>>()) ,8))
-                        , as_<wide<Out,N>>()
+      auto cc = bit_cast( wide<std::uint32_t,N>(_mm_bslli_si128( bit_cast(hc, as<wide<std::uint32_t,N>>()) ,8))
+                        , as<wide<Out,N>>()
                         );
 
       return cc | lc;
@@ -78,17 +80,17 @@ namespace eve::detail
           h = _mm_shufflelo_epi16(h, _MM_SHUFFLE(2,0,2,0));
           h = _mm_shuffle_epi32  (h, _MM_SHUFFLE(2,0,2,0));
 
-          return bit_cast( _mm_shuffle_ps ( bit_cast(l, as_<as_floating_point_t<decltype(l)>>())
-                                          , bit_cast(h, as_<as_floating_point_t<decltype(h)>>())
+          return bit_cast( _mm_shuffle_ps ( bit_cast(l, as<as_floating_point_t<decltype(l)>>())
+                                          , bit_cast(h, as<as_floating_point_t<decltype(h)>>())
                                           , _MM_SHUFFLE(1,0,1,0)
                                           )
-                                , as_<wide<Out>>()
+                                , as<wide<Out>>()
                                 );
         }
       }
       else
       {
-        return convert(convert(v0, as_<downgrade_t<In>>()), as_<Out>());
+        return convert(convert(v0, as<downgrade_t<In>>()), as<Out>());
       }
     }
     else
