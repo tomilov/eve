@@ -62,6 +62,10 @@ namespace eve::detail
     {
             if constexpr( std::is_same_v<In, double> && (N::value <= 2) ) return _mm_cvtpd_ps(v0);
       else  if constexpr( std::is_same_v<In, std::int32_t> )              return _mm_cvtepi32_ps(v0);
+      else  if constexpr( std::is_integral_v<In> && (sizeof(In) <= 2) )
+      {
+        return convert(convert(v0, as<std::int32_t>()), as<float>());
+      }
       else  return convert_(EVE_RETARGET(simd_), v0, tgt);
     }
     //==============================================================================================
