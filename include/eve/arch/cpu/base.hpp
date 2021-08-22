@@ -76,17 +76,20 @@ namespace eve::detail
   //!
   //! @tparam Size Type encoding the cardinal of a wide
   //================================================================================================
-  template<typename Size> struct wide_cardinal
+  template<auto Size> struct wide_cardinal
   {
     //! Type describing the number of lanes of current wide
-    using cardinal_type = Size;
+    using cardinal_type = decltype(Size);
     using size_type     = std::ptrdiff_t;
 
+    //! @brief Cardinal of the wide in number of lanes
+    static EVE_FORCEINLINE constexpr size_type lanes()     noexcept { return Size; }
+
     //! @brief Size of the wide in number of lanes
-    static EVE_FORCEINLINE constexpr size_type size()     noexcept { return Size::value; }
+    static EVE_FORCEINLINE constexpr size_type size()     noexcept { return Size.value; }
 
     //! @brief Maximal number of lanes for a given wide
-    static EVE_FORCEINLINE constexpr size_type max_size() noexcept { return Size::value; }
+    static EVE_FORCEINLINE constexpr size_type max_size() noexcept { return Size.value; }
 
     //! @brief Check if a wide contains 0 lanes
     static EVE_FORCEINLINE constexpr bool      empty()    noexcept { return false; }

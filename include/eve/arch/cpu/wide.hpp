@@ -52,19 +52,19 @@ namespace eve
   //! **Required header:** `#include <eve/wide.hpp>`
   //!
   //! eve::wide is an architecture-agnostic representation of a IMD register and provides
-  //! standardized API to access informations, compute values and manipulate such register.
+  //! standardized API to access information, compute values and manipulate such register.
   //!
   //! @tparam Type      Type of value to store in the register
-  //! @tparam Cardinal  Cardinal of the register. By default, the best cardinal for current
-  //!                    architecture is selected.
+  //! @tparam Lanes     Number of elements in the register. By default, the best size for current
+  //!                   architecture is selected.
   //================================================================================================
-  template<typename Type, typename Cardinal>
+  template<typename Type, auto Lanes>
   struct  EVE_MAY_ALIAS  wide
-        : detail::wide_cardinal<Cardinal>
-        , detail::wide_storage<as_register_t<Type, Cardinal, abi_t<Type, Cardinal>>>
+        : detail::wide_cardinal<Lanes>
+        , detail::wide_storage<as_register_t<Type, Lanes, abi_t<Type, Lanes>>>
   {
-    using card_base     = detail::wide_cardinal<Cardinal>;
-    using storage_base  = detail::wide_storage<as_register_t<Type, Cardinal, abi_t<Type, Cardinal>>>;
+    using card_base     = detail::wide_cardinal<Lanes>;
+    using storage_base  = detail::wide_storage<as_register_t<Type, Lanes, abi_t<Type, Lanes>>>;
 
     public:
 
@@ -72,7 +72,7 @@ namespace eve
     using value_type    = Type;
 
     //! The ABI tag for this register.
-    using abi_type      = abi_t<Type, Cardinal>;
+    using abi_type      = abi_t<Type, Lanes>;
 
     //! The type used for this register storage
     using storage_type  = typename storage_base::storage_type;
@@ -85,13 +85,10 @@ namespace eve
 
     //! @brief Generates a eve::wide from a different type `T` and cardinal `N`.
     //! If unspecified, `N` is computed as `expected_cardinal_t<T>`.
-    template<typename T, typename N = expected_cardinal_t<T>> using rebind = wide<T,N>;
+    template<typename T, auto N = expected_cardinal_t<T>{}> using rebind = wide<T,N>;
 
     //! Generates a eve::wide type from a different cardinal `N`.
-    template<typename N> using rescale = wide<Type,N>;
-
-    // TODO : REMOVE AFTER MERGE
-    static EVE_FORCEINLINE constexpr auto alignment() noexcept { return sizeof(Type)*Cardinal{}; }
+    template<auto Lane> using rescale = wide<Type,Lane>;
 
     //==============================================================================================
     //! @name Constructors
@@ -138,14 +135,14 @@ namespace eve
     //! Constructs a eve::wide from a SIMD compatible pointer
     template<simd_compatible_ptr<wide> Ptr>
     EVE_FORCEINLINE explicit  wide(Ptr ptr) noexcept
-                            : storage_base(load(ptr, Cardinal{}))
+                            : storage_base(load(ptr, Lanes))
     {}
 
     //! Constructs a eve::wide from a SIMD compatible pointer
     template<detail::data_source... Ptr>
     requires(kumi::product_type<Type>)
     EVE_FORCEINLINE explicit  wide(kumi::tuple<Ptr...> ptr) noexcept
-                            : storage_base(load(ptr, Cardinal{}))
+                            : storage_base(load(ptr, Lanes))
     {}
 
     //! Constructs a eve::wide by splatting a scalar value in all lanes
@@ -214,7 +211,7 @@ namespace eve
     {}
 
     //! @brief Constructs a eve::wide by combining two eve::wide of half the current cardinal.
-    //! Does not participate in overload resolution if `Cardinal::value != 2 * Half::value`.
+    //! Does not participate in overload resolution if `Lanes.value != 2 * Half::value`.
     template<typename Half>
     EVE_FORCEINLINE wide( wide<Type, Half> const &l, wide<Type, Half> const &h) noexcept
 #if !defined(EVE_DOXYGEN_INVOKED)
@@ -269,14 +266,14 @@ namespace eve
     }
 
     //! Retrieve the value of the first lanes
-    EVE_FORCEINLINE auto back()  const noexcept { return get(Cardinal::value-1); }
+    EVE_FORCEINLINE auto back()  const noexcept { return get(Lanes.value-1); }
 
     //! Retrieve the value of the first lane
     EVE_FORCEINLINE auto front() const noexcept { return get(0); }
 
     //==============================================================================================
     //! @brief Slice a eve::wide into two eve::wide of half cardinal.
-    //! Does not participate in overload resolution if `Cardinal::value == 1`.
+    //! Does not participate in overload resolution if `Lanes.value == 1`.
     //!
     //! **Example:**
     //!
@@ -300,7 +297,7 @@ namespace eve
     //==============================================================================================
     EVE_FORCEINLINE auto slice() const
 #if !defined(EVE_DOXYGEN_INVOKED)
-    requires(Cardinal::value > 1)
+    requires(Lanes.value > 1)
 #endif
     {
       return detail::slice(*this);
@@ -308,7 +305,7 @@ namespace eve
 
     //==============================================================================================
     //! @brief Return the upper or lower half-sized slice of a eve::wide.
-    //! Does not participate in overload resolution if `Cardinal::value == 1`.
+    //! Does not participate in overload resolution if `Lanes.value == 1`.
     //!
     //! @see eve::upper_
     //! @see eve::lower_
@@ -339,7 +336,7 @@ namespace eve
     template<std::size_t Slice>
     EVE_FORCEINLINE auto slice(slice_t<Slice> s) const
 #if !defined(EVE_DOXYGEN_INVOKED)
-    requires(Cardinal::value > 1)
+    requires(Lanes.value > 1)
 #endif
     {
       return detail::slice(*this, s);
@@ -408,7 +405,7 @@ namespace eve
     //! @endcode
     //==============================================================================================
     template<integral_scalar_value Index>
-    EVE_FORCEINLINE auto operator[](wide<Index,Cardinal> const& idx) const noexcept
+    EVE_FORCEINLINE auto operator[](wide<Index,Lanes> const& idx) const noexcept
     {
       return lookup((*this),idx);
     }
@@ -452,12 +449,12 @@ namespace eve
     template<std::ptrdiff_t... I>
 #if !defined (EVE_DOXYGEN_INVOKED)
     EVE_FORCEINLINE auto operator[](pattern_t<I...> ) const noexcept
-    requires(pattern_t<I...>{}.validate(Cardinal::value))
+    requires(pattern_t<I...>{}.validate(Lanes.value))
 #else
     EVE_FORCEINLINE auto operator[](pattern_t<I...> p) const noexcept
 #endif
     {
-      constexpr auto swizzler = detail::find_optimized_pattern<Cardinal::value,I...>();
+      constexpr auto swizzler = detail::find_optimized_pattern<Lanes.value,I...>();
       return swizzler(*this);
     }
 
@@ -502,7 +499,7 @@ namespace eve
     template<typename F>
     EVE_FORCEINLINE auto operator[](as_pattern<F> p) const noexcept
     {
-      return (*this)[ fix_pattern<Cardinal::value>(p) ];
+      return (*this)[ fix_pattern<Lanes.value>(p) ];
     }
 
     //==============================================================================================
@@ -565,7 +562,7 @@ namespace eve
     requires( !kumi::product_type<Type> && bit_compatible_values<wide,S> )
 #endif
     {
-      auto    u  = bit_cast(w, as<typename wide::template rebind<S,Cardinal>>());
+      auto    u  = bit_cast(w, as<typename wide::template rebind<S,Lanes>>());
       return  u &= v;
     }
 
@@ -611,7 +608,7 @@ namespace eve
     requires( !kumi::product_type<Type> && bit_compatible_values<wide,S> )
 #endif
     {
-      auto    u  = bit_cast(w, as<typename wide::template rebind<S,Cardinal>>());
+      auto    u  = bit_cast(w, as<typename wide::template rebind<S,Lanes>>());
       return  u |= v;
     }
 
@@ -657,7 +654,7 @@ namespace eve
      requires( !kumi::product_type<Type> && bit_compatible_values<wide,S> )
 #endif
     {
-      auto    u  = bit_cast(w, as<typename wide::template rebind<S,Cardinal>>());
+      auto    u  = bit_cast(w, as<typename wide::template rebind<S,Lanes>>());
       return  u ^= v;
     }
 
