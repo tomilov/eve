@@ -247,6 +247,10 @@ namespace eve::detail
           auto bytes = basic_swizzle(eve::bit_cast(v0,eve::as<wide<Out>>()), shf);
           return wide<Out,N>(bytes.storage());
         }
+        else if constexpr( std::is_same_v<In,float> )
+        {
+          return convert(convert(v0, as<std::int32_t>()),tgt);
+        }
         else
         {
           return convert_(EVE_RETARGET(simd_), v0, tgt);
