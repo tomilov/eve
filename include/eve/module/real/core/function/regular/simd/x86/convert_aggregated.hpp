@@ -32,21 +32,28 @@ namespace eve::detail
       auto lc = convert(l, tgt);
       auto hc = convert(h, tgt);
 
-      auto cc = bit_cast( wide<std::uint32_t,N>(_mm_bslli_si128( bit_cast(hc, as<wide<std::uint32_t,N>>()) ,8))
+      auto cc = bit_cast( wide<std::uint32_t,N>(_mm_bslli_si128( bit_cast(hc, as<wide<std::uint32_t,N>>()), 2*sizeof(Out)))
                         , as<wide<Out,N>>()
                         );
-
       return cc | lc;
     }
-    else if constexpr( std::is_integral_v<In> && (sizeof(In) == 2) )
+    /*
+    // int16x8 => int32x8
+    else if constexpr( std::is_integral_v<In> && (sizeof(In) == 2) && sizeof(Out) == 4)
     {
+      puts("LA");
       // We slice the shortx16 int shortsx8
       auto[l,h] = v0.slice();
 
+      std::cout << "l: " << l << "\n";
+      std::cout << "h: " << h << "\n";
       // Remove the higher bits that will cause unwanted saturation
       l = static_cast<In>(0x00FFU);
       h = static_cast<In>(0x00FFU);
-
+      std::cout << "l': " << l << "\n";
+      std::cout << "h': " << h << "\n";
+      wide<Out,N> r(_mm_packus_epi16(l,h));
+      std::cout << "r: " << r << "\n";
       // Pack as bunch of bytes that can't saturate anyway
       return _mm_packus_epi16(l,h);
     }
@@ -93,6 +100,7 @@ namespace eve::detail
         return convert(convert(v0, as<downgrade_t<In>>()), as<Out>());
       }
     }
+      */
     else
     {
       return convert_(EVE_RETARGET(simd_), v0, tgt);

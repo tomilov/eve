@@ -196,32 +196,46 @@ namespace eve::detail
       //============================================================================================
       // 8 -> 16 bits
       //============================================================================================
-      if constexpr( std::is_integral_v<In> && (sizeof(In) == 1) )
+      if constexpr( std::is_integral_v<In> )
       {
-        constexpr auto sz = N::value <= 8;
-        if constexpr( current_api >= sse4_1 )
+        if constexpr( sizeof(In) == 1 )
         {
-                if constexpr(  std::is_signed_v<In> && sz ) return _mm_cvtepi8_epi16(v0);
-          else  if constexpr( !std::is_signed_v<In> && sz ) return _mm_cvtepu8_epi16(v0);
-          else  return convert_(EVE_RETARGET(simd_), v0, tgt);
-        }
-        else
-        {
-          auto const mask = [&]() { if constexpr(std::is_signed_v<In>)  return (v0<0).bits();
-                                    else                                return _mm_setzero_si128();
-                                  }();
-
-          if constexpr(N::value <= 8)
+          constexpr auto sz = N::value <= 8;
+          if constexpr( current_api >= sse4_1 )
           {
-            return _mm_unpacklo_epi8( v0, mask );
+                  if constexpr(  std::is_signed_v<In> && sz ) return _mm_cvtepi8_epi16(v0);
+            else  if constexpr( !std::is_signed_v<In> && sz ) return _mm_cvtepu8_epi16(v0);
+            else  return convert_(EVE_RETARGET(simd_), v0, tgt);
           }
           else
           {
-            // clang can generate this from aggregate+above, but not gcc nor msvc
-            wide<Out, fixed<8>> l = _mm_unpacklo_epi8( v0, mask );
-            wide<Out, fixed<8>> h = _mm_unpackhi_epi8( v0, mask );
-            return wide<Out, N>(l,h);
+            auto const mask = [&]() { if constexpr(std::is_signed_v<In>)  return (v0<0).bits();
+                                      else                                return _mm_setzero_si128();
+                                    }();
+
+            if constexpr(N::value <= 8)
+            {
+              return _mm_unpacklo_epi8( v0, mask );
+            }
+            else
+            {
+              // clang can generate this from aggregate+above, but not gcc nor msvc
+              wide<Out, fixed<8>> l = _mm_unpacklo_epi8( v0, mask );
+              wide<Out, fixed<8>> h = _mm_unpackhi_epi8( v0, mask );
+              return wide<Out, N>(l,h);
+            }
           }
+        }
+        else
+        {
+          // We only take two bytes every sizeof(In)
+          constexpr auto shf = fix_pattern<N::value>( as_pattern{ [](auto i, auto)
+                                                                  {
+                                                                    return i*sizeof(In)/sizeof(Out);
+                                                                } }
+                                                    );
+          auto bytes = basic_swizzle(eve::bit_cast(v0,eve::as<wide<Out>>()), shf);
+          return wide<Out,N>(bytes.storage());
         }
       }
       else
