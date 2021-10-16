@@ -167,16 +167,20 @@ namespace eve
                                 )             )
     {}
 
-    //! Constructs a eve::wide from a sequence of SIMD product type values
-    template<simd_value S0, simd_value... Ss>
+    //! Constructs a eve::wide from a sequence of values
+    template<value S0, value... Ss>
     explicit EVE_FORCEINLINE wide( S0 v0, Ss... vs) noexcept
 #if !defined(EVE_DOXYGEN_INVOKED)
     requires    kumi::sized_product_type<Type,1+sizeof...(Ss)>
-            &&  (   std::same_as<cardinal_t<S0>,Cardinal> &&  ...
-                &&  std::same_as<cardinal_t<Ss>,Cardinal>
+            &&  (   size_compatible_values<S0,wide> &&  ...
+                &&  size_compatible_values<Ss,wide>
                 )
 #endif
-            : storage_base(kumi::make_tuple(v0,vs...))
+            : storage_base( kumi::map ( []<typename W>(auto n, W) { return W{n}; }
+                                      , kumi::make_tuple(v0,vs...)
+                                      , *this
+                                      )
+                          )
     {}
 
     //==============================================================================================

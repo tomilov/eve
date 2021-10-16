@@ -135,6 +135,11 @@ namespace eve
   {
     using tuple_type = kumi::tuple<Fields...>;
 
+    struct_support() {}
+
+    template<typename... Args>
+    struct_support(Args&&... args) : tuple_type{std::forward<Args>(args)...} {}
+
     EVE_FORCEINLINE friend auto operator+(eve::like<Self> auto x, eve::like<Self> auto y) requires requires { x += y; }
     {
       x += y;
