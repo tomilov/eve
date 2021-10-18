@@ -88,8 +88,6 @@ namespace eve
   //!   This is used to work with custom structs in eve, see `oop` section in `examples`.
   //! @}
   //================================================================================================
-
-
   template<typename Wrapper, typename Self> struct supports_like : std::false_type {};
 
   template <typename Wrapper, typename Self>
@@ -101,6 +99,23 @@ namespace eve
   template<typename Wrapper, typename Self>
   concept like = std::same_as<std::remove_cvref_t<Wrapper>, Self> ||
                  supports_like<std::remove_cvref_t<Wrapper>, Self>::value;
+
+  namespace detail
+  {
+    template<typename Type, template<typename...> typename Model>
+    struct model_of_impl : std::false_type
+    {};
+
+    template<typename... Base, template<typename...> typename Model>
+    struct model_of_impl<Model<Base...>, Model> : std::true_type
+    {};
+    template<typename N, typename... Base, template<typename...> typename Model>
+    struct model_of_impl<eve::wide<Model<Base...>,N>, Model> : std::true_type
+    {};
+  }
+
+  template<typename Type, template<typename...> typename Model>
+  concept model_of = detail::model_of_impl<Type,Model>::value;
 
   //================================================================================================
   //! @addtogroup struct
