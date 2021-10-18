@@ -8,6 +8,8 @@
 #pragma once
 
 #include <eve/concept/vectorizable.hpp>
+#include <eve/function/real.hpp>
+#include <eve/function/imag.hpp>
 #include <eve/product_type.hpp>
 #include <ostream>
 
@@ -17,7 +19,7 @@ namespace eve
   //! @addtogroup simd_types
   //! @{
   //================================================================================================
-  //! @brief SIMD-aware complex number types
+  //! @brief SIMD-aware complex number type
   //!
   //! **Required header:** `#include <eve/complex/complex.hpp>`
   //!
@@ -44,8 +46,21 @@ namespace eve
     //! @brief Inserts a eve::complex into a output stream
     friend std::ostream& operator<<(std::ostream& os, complex<Type> const& z) noexcept
     {
-      auto i = get<1>(z);
-      return os << get<0>(z) << (i < 0 ? " - " : " + " ) << i << " * i";
+      os << get<0>(z);
+      if(auto i = get<1>(z); i < 0) os << " - " << -i; else os << " + " << i;
+      return os << " * i";
+    }
+
+    template<like<complex> T>
+    friend EVE_FORCEINLINE auto tagged_dispatch(eve::tag::real_ const&, T const &a) noexcept
+    {
+      return get<0>(a);
+    }
+
+    template<like<complex> T>
+    friend EVE_FORCEINLINE auto tagged_dispatch(eve::tag::imag_ const&, T const &a) noexcept
+    {
+      return get<1>(a);
     }
   };
   //================================================================================================
