@@ -8,9 +8,34 @@
 #pragma once
 
 #include <eve/detail/overload.hpp>
+#include <eve/detail/callable.hpp>
+
+namespace eve::tag { struct add_ {}; }
+
+#include <eve/module/real/core/function/regular/generic/add.hpp>
+
+#if defined(EVE_INCLUDE_X86_HEADER)
+#  include <eve/module/real/core/function/regular/simd/x86/add.hpp>
+#else
+namespace eve::detail
+{
+  using callable_add_ = generic_add_;
+
+  template<typename Condition>
+  struct masked_callable<Condition,tag::add_> : generic_mask_add_<Condition>
+  {
+    using generic_mask_add_<Condition>::operator();
+  };
+}
+#endif
 
 namespace eve
 {
+  template<typename Dummy> struct callable_<tag::add_, Dummy>
+  {
+    using type = detail::callable_add_;
+  };
+
   //================================================================================================
   //! @addtogroup operators
   //! @{
@@ -86,11 +111,5 @@ namespace eve
   //!
   //!  @}
   //================================================================================================
-  EVE_MAKE_CALLABLE(add_, add);
+  inline detail::callable_add_ const add = {};
 }
-
-#include <eve/module/real/core/function/regular/generic/add.hpp>
-
-#if defined(EVE_INCLUDE_X86_HEADER)
-#  include <eve/module/real/core/function/regular/simd/x86/add.hpp>
-#endif
